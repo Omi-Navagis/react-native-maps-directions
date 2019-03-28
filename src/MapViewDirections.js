@@ -12,6 +12,7 @@ class MapViewDirections extends Component {
 			coordinates: null,
 			distance: null,
 			duration: null,
+			durationInTraffic: null,
 		};
 	}
 
@@ -41,6 +42,7 @@ class MapViewDirections extends Component {
 			coordinates: null,
 			distance: null,
 			duration: null,
+			durationInTraffic: null,
 		}, cb);
 	}
 
@@ -53,7 +55,7 @@ class MapViewDirections extends Component {
 			o = 1 & i ? ~(i >> 1) : i >> 1, l += n, r += o, d.push([l / c, r / c]);
 		}
 
-		return d = d.map(function(t) {
+		return d = d.map((t) => {
 			return {
 				latitude: t[0],
 				longitude: t[1],
@@ -76,6 +78,7 @@ class MapViewDirections extends Component {
 			optimizeWaypoints,
 			directionsServiceBaseUrl = 'https://maps.googleapis.com/maps/api/directions/json',
 			region,
+			durationInTraffic,
 		} = props;
 
 		if (!origin || !destination) {
@@ -108,7 +111,7 @@ class MapViewDirections extends Component {
 			waypoints: waypoints ? waypoints.split('|') : [],
 		});
 
-		this.fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region)
+		this.fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic)
 			.then(result => {
 				if (!this._mounted) return;
 				this.setState(result);
@@ -121,12 +124,17 @@ class MapViewDirections extends Component {
 			});
 	}
 
-	fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region) {
+	fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic) {
 
 		// Define the URL to call. Only add default parameters to the URL if it's a string.
 		let url = directionsServiceBaseUrl;
 		if (typeof (directionsServiceBaseUrl) === 'string') {
 			url += `?origin=${origin}&waypoints=${waypoints}&destination=${destination}&key=${apikey}&mode=${mode}&language=${language}&region=${region}`;
+		}
+
+		// If "departure_time" is set, Google API will iclude "duration_in_traffic" property into the response data.
+		if (durationInTraffic) {
+			url += `&departure_time=now`;
 		}
 
 		return fetch(url)
@@ -139,17 +147,28 @@ class MapViewDirections extends Component {
 				}
 
 				if (json.routes.length) {
-
 					const route = json.routes[0];
 
 					return Promise.resolve({
-						distance: route.legs.reduce((carry, curr) => {
-							return carry + curr.distance.value;
-						}, 0) / 1000,
-						duration: route.legs.reduce((carry, curr) => {
-							return carry + curr.duration.value;
-						}, 0) / 60,
+						distance: {
+							// value = meter
+							meter: route.legs.reduce((carry, curr) => {
+								return carry + curr.distance.value;
+							}, 0),
+						},
+						duration: {
+							// value = second
+							second: route.legs.reduce((carry, curr) => {
+								return carry + curr.duration.value;
+							}, 0),
+						},
 						coordinates: this.decode(route.overview_polyline.points),
+						durationInTraffic: {
+							// value = second
+							second: route.legs.reduce((carry, curr) => {
+								return carry + curr.duration_in_traffic.value;
+							}, 0),
+						},
 						fare: route.fare,
 					});
 
@@ -159,9 +178,9 @@ class MapViewDirections extends Component {
 			})
 			.catch(err => {
 				console.warn(
-          'react-native-maps-directions Error on GMAPS route request',
-          err
-        );
+					'react-native-maps-directions Error on GMAPS route request',
+					err
+				);
 			});
 	}
 
@@ -180,6 +199,7 @@ class MapViewDirections extends Component {
 			mode, // eslint-disable-line no-unused-vars
 			language, // eslint-disable-line no-unused-vars
 			region,
+			durationInTraffic,
 			...props
 		} = this.props;
 
@@ -224,6 +244,7 @@ MapViewDirections.propTypes = {
 	optimizeWaypoints: PropTypes.bool,
 	directionsServiceBaseUrl: PropTypes.string,
 	region: PropTypes.string,
+	durationInTraffic: PropTypes.bool,
 };
 
 export default MapViewDirections;
