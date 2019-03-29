@@ -79,6 +79,7 @@ class MapViewDirections extends Component {
 			directionsServiceBaseUrl = 'https://maps.googleapis.com/maps/api/directions/json',
 			region,
 			durationInTraffic,
+			restrictions
 		} = props;
 
 		if (!origin || !destination) {
@@ -111,7 +112,7 @@ class MapViewDirections extends Component {
 			waypoints: waypoints ? waypoints.split('|') : [],
 		});
 
-		this.fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic)
+		this.fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic, restrictions)
 			.then(result => {
 				if (!this._mounted) return;
 				this.setState(result);
@@ -124,7 +125,7 @@ class MapViewDirections extends Component {
 			});
 	}
 
-	fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic) {
+	fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic, restrictions) {
 
 		// Define the URL to call. Only add default parameters to the URL if it's a string.
 		let url = directionsServiceBaseUrl;
@@ -135,6 +136,10 @@ class MapViewDirections extends Component {
 		// If "departure_time" is set, Google API will iclude "duration_in_traffic" property into the response data.
 		if (durationInTraffic) {
 			url += `&departure_time=now`;
+		}
+
+		if (restrictions.length > 0) {
+			url += `&avoid=${restrictions.join('|')}`;
 		}
 
 		return fetch(url)
@@ -200,6 +205,7 @@ class MapViewDirections extends Component {
 			language, // eslint-disable-line no-unused-vars
 			region,
 			durationInTraffic,
+			restrictions,
 			...props
 		} = this.props;
 
@@ -245,6 +251,7 @@ MapViewDirections.propTypes = {
 	directionsServiceBaseUrl: PropTypes.string,
 	region: PropTypes.string,
 	durationInTraffic: PropTypes.bool,
+	restrictions: PropTypes.array,
 };
 
 export default MapViewDirections;
