@@ -73,7 +73,7 @@ class MapViewDirections extends Component {
 			onStart,
 			onReady,
 			onError,
-			mode = 'DRIVING',
+			mode = 'driving',
 			language = 'en',
 			optimizeWaypoints,
 			directionsServiceBaseUrl = 'https://maps.googleapis.com/maps/api/directions/json',
@@ -135,16 +135,24 @@ class MapViewDirections extends Component {
 
 		// If "departure_time" is set, Google API will iclude "duration_in_traffic" property into the response data.
 		if (durationInTraffic) {
-			url += `&departure_time=now`;
+			url += `&departure_time=${new Date().getTime()}`;
 		}
 
 		if (restrictions.length > 0) {
 			url += `&avoid=${restrictions.join('|')}`;
 		}
 
+		// console.log(url);
+
 		return fetch(url)
 			.then(response => response.json())
 			.then(json => {
+
+				if (json.status == 'ZERO_RESULTS') {
+					return Promise.resolve({
+						coordinates: [],
+					});
+				}
 
 				if (json.status !== 'OK') {
 					const errorMessage = json.error_message || 'Unknown error';
@@ -153,6 +161,8 @@ class MapViewDirections extends Component {
 
 				if (json.routes.length) {
 					const route = json.routes[0];
+
+					// console.log("response json:", json);
 
 					return Promise.resolve({
 						distance: {
@@ -171,6 +181,9 @@ class MapViewDirections extends Component {
 						durationInTraffic: {
 							// value = second
 							second: route.legs.reduce((carry, curr) => {
+								if (!curr.duration_in_traffic) {
+									return;
+								}
 								return carry + curr.duration_in_traffic.value;
 							}, 0),
 						},
@@ -244,7 +257,7 @@ MapViewDirections.propTypes = {
 	onStart: PropTypes.func,
 	onReady: PropTypes.func,
 	onError: PropTypes.func,
-	mode: PropTypes.oneOf(['DRIVING', 'BICYCLING', 'TRANSIT', 'WALKING']),
+	mode: PropTypes.oneOf(['', 'driving', 'bicycling', 'transit', 'walking']),
 	language: PropTypes.string,
 	resetOnChange: PropTypes.bool,
 	optimizeWaypoints: PropTypes.bool,
