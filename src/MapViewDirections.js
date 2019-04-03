@@ -26,7 +26,7 @@ class MapViewDirections extends Component {
 	}
 
 	componentWillReceiveProps(nextProps) {
-		if (!isEqual(nextProps.origin, this.props.origin) || !isEqual(nextProps.destination, this.props.destination) || !isEqual(nextProps.waypoints, this.props.waypoints) || !isEqual(nextProps.mode, this.props.mode)) {
+		if (!isEqual(nextProps.origin, this.props.origin) || !isEqual(nextProps.destination, this.props.destination) || !isEqual(nextProps.waypoints, this.props.waypoints) || !isEqual(nextProps.mode, this.props.mode) || !isEqual(nextProps.restrictions, this.props.restrictions)) {
 			if (nextProps.resetOnChange === false) {
 				this.fetchAndRenderRoute(nextProps);
 			} else {
@@ -79,7 +79,7 @@ class MapViewDirections extends Component {
 			directionsServiceBaseUrl = 'https://maps.googleapis.com/maps/api/directions/json',
 			region,
 			durationInTraffic,
-			restrictions
+			restrictions = [],
 		} = props;
 
 		if (!origin || !destination) {
