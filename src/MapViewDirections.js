@@ -82,6 +82,7 @@ class MapViewDirections extends Component {
 			apikey,
 			onStart,
 			onReady,
+			onPress,
 			onError,
 			mode = 'driving',
 			language = 'en',
@@ -200,6 +201,9 @@ class MapViewDirections extends Component {
 						}
 					});
 
+					// The best route should be the last element to optimize polylines.
+					routes.reverse();
+
 					return Promise.resolve({
 						routes
 					});
@@ -227,12 +231,13 @@ class MapViewDirections extends Component {
 			destination, // eslint-disable-line no-unused-vars
 			apikey, // eslint-disable-line no-unused-vars
 			onReady, // eslint-disable-line no-unused-vars
+			onPress, // added by Omi.
 			onError, // eslint-disable-line no-unused-vars
 			mode, // eslint-disable-line no-unused-vars
 			language, // eslint-disable-line no-unused-vars
 			region,
-			durationInTraffic,
-			restrictions,
+			durationInTraffic, // added by Omi.
+			restrictions, // added by Omi.
 			...props
 		} = this.props;
 
@@ -243,7 +248,16 @@ class MapViewDirections extends Component {
 				if (index != this.state.routes.length - 1) {
 					newProps.strokeColor = "#a9a9a9"
 				}
-				return <MapView.Polyline key={index} coordinates={route.coordinates} tappable={true} onPress={() => { this.selectRoute(index) }} {...newProps} />
+				return <MapView.Polyline
+					key={index}
+					coordinates={route.coordinates}
+					tappable={true}
+					onPress={() => {
+						this.selectRoute(index);
+						onPress(route);
+					}}
+					{...newProps}
+				/>
 			})
 		);
 	}
@@ -277,6 +291,7 @@ MapViewDirections.propTypes = {
 	apikey: PropTypes.string.isRequired,
 	onStart: PropTypes.func,
 	onReady: PropTypes.func,
+	onPress: PropTypes.func,
 	onError: PropTypes.func,
 	mode: PropTypes.oneOf(['', 'driving', 'bicycling', 'transit', 'walking']),
 	language: PropTypes.string,
