@@ -9,10 +9,12 @@ class MapViewDirections extends Component {
 		super(props);
 
 		this.state = {
-			coordinates: null,
-			distance: null,
-			duration: null,
-			durationInTraffic: null,
+			routes: [{
+				coordinates: [],
+				distance: null,
+				duration: null,
+				durationInTraffic: null,
+			}]
 		};
 	}
 
@@ -44,6 +46,14 @@ class MapViewDirections extends Component {
 			duration: null,
 			durationInTraffic: null,
 		}, cb);
+	}
+
+	selectRoute = (selectedIndex) => {
+		const newRoutes = this.state.routes;
+		const selectedRoute = newRoutes[selectedIndex];
+		newRoutes.splice(selectedIndex, 1);
+		newRoutes.push(selectedRoute);
+		this.setState(newRoutes);
 	}
 
 	decode(t, e) {
@@ -135,14 +145,16 @@ class MapViewDirections extends Component {
 
 		// If "departure_time" is set, Google API will iclude "duration_in_traffic" property into the response data.
 		if (durationInTraffic) {
-			url += `&departure_time=${new Date().getTime()}`;
+			url += `&departure_time=now`;
 		}
 
 		if (restrictions.length > 0) {
 			url += `&avoid=${restrictions.join('|')}`;
 		}
 
-		// console.log(url);
+		url += `&alternatives=true`;
+
+		console.log(url);
 
 		return fetch(url)
 			.then(response => response.json())
@@ -160,34 +172,36 @@ class MapViewDirections extends Component {
 				}
 
 				if (json.routes.length) {
-					const route = json.routes[0];
-
-					// console.log("response json:", json);
+					const routes = json.routes.map((route) => {
+						return {
+							distance: {
+								// value = meter
+								meter: route.legs.reduce((carry, curr) => {
+									return carry + curr.distance.value;
+								}, 0),
+							},
+							duration: {
+								// value = second
+								second: route.legs.reduce((carry, curr) => {
+									return carry + curr.duration.value;
+								}, 0),
+							},
+							coordinates: this.decode(route.overview_polyline.points),
+							durationInTraffic: {
+								// value = second
+								second: route.legs.reduce((carry, curr) => {
+									if (!curr.duration_in_traffic) {
+										return;
+									}
+									return carry + curr.duration_in_traffic.value;
+								}, 0),
+							},
+							fare: route.fare,
+						}
+					});
 
 					return Promise.resolve({
-						distance: {
-							// value = meter
-							meter: route.legs.reduce((carry, curr) => {
-								return carry + curr.distance.value;
-							}, 0),
-						},
-						duration: {
-							// value = second
-							second: route.legs.reduce((carry, curr) => {
-								return carry + curr.duration.value;
-							}, 0),
-						},
-						coordinates: this.decode(route.overview_polyline.points),
-						durationInTraffic: {
-							// value = second
-							second: route.legs.reduce((carry, curr) => {
-								if (!curr.duration_in_traffic) {
-									return;
-								}
-								return carry + curr.duration_in_traffic.value;
-							}, 0),
-						},
-						fare: route.fare,
+						routes
 					});
 
 				} else {
@@ -203,7 +217,7 @@ class MapViewDirections extends Component {
 	}
 
 	render() {
-		if (!this.state.coordinates) {
+		if (this.state.routes.length == 0) {
 			return null;
 		}
 
@@ -223,7 +237,14 @@ class MapViewDirections extends Component {
 		} = this.props;
 
 		return (
-			<MapView.Polyline coordinates={this.state.coordinates} {...props} />
+			this.state.routes.map((route, index) => {
+				const newProps = { ...props };
+				// The last polyline is the selected route.
+				if (index != this.state.routes.length - 1) {
+					newProps.strokeColor = "#a9a9a9"
+				}
+				return <MapView.Polyline key={index} coordinates={route.coordinates} tappable={true} onPress={() => { this.selectRoute(index) }} {...newProps} />
+			})
 		);
 	}
 
