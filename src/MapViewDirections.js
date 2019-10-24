@@ -1,3 +1,9 @@
+/* eslint-disable react/jsx-closing-bracket-location */
+/* eslint-disable no-console */
+/* eslint-disable comma-dangle */
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable react/jsx-no-bind */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import MapView from 'react-native-maps';
@@ -198,7 +204,10 @@ class MapViewDirections extends Component {
 								}, 0),
 							},
 							fare: route.fare,
-						}
+							steps: route.legs.reduce((carry, curr) => {
+								return [...carry, ...curr.steps];
+							}, []),
+						};
 					});
 
 					// The best route should be the last element to optimize polylines.
@@ -246,7 +255,7 @@ class MapViewDirections extends Component {
 				const newProps = { ...props };
 				// The last polyline is the selected route.
 				if (index != this.state.routes.length - 1) {
-					newProps.strokeColor = "#a9a9a9"
+					newProps.strokeColor = "#a9a9a9";
 				}
 				return <MapView.Polyline
 					key={index}
@@ -257,7 +266,7 @@ class MapViewDirections extends Component {
 						onPress(route);
 					}}
 					{...newProps}
-				/>
+				/>;
 			})
 		);
 	}
