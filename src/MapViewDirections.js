@@ -97,6 +97,7 @@ class MapViewDirections extends Component {
 			region,
 			durationInTraffic,
 			restrictions = [],
+			alternativeRoute = false,
 		} = props;
 
 		if (!origin || !destination) {
@@ -129,7 +130,7 @@ class MapViewDirections extends Component {
 			waypoints: waypoints ? waypoints.split('|') : [],
 		});
 
-		this.fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic, restrictions)
+		this.fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic, restrictions, alternativeRoute)
 			.then(result => {
 				if (!this._mounted) return;
 				this.setState(result);
@@ -142,7 +143,7 @@ class MapViewDirections extends Component {
 			});
 	}
 
-	fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic, restrictions) {
+	fetchRoute(directionsServiceBaseUrl, origin, waypoints, destination, apikey, mode, language, region, durationInTraffic, restrictions, alternativeRoute) {
 
 		// Define the URL to call. Only add default parameters to the URL if it's a string.
 		let url = directionsServiceBaseUrl;
@@ -159,7 +160,9 @@ class MapViewDirections extends Component {
 			url += `&avoid=${restrictions.join('|')}`;
 		}
 
-		url += `&alternatives=true`;
+		if (alternativeRoute === true) {
+			url += `&alternatives=true`;
+		}
 
 		console.log(url);
 
@@ -310,6 +313,7 @@ MapViewDirections.propTypes = {
 	region: PropTypes.string,
 	durationInTraffic: PropTypes.bool,
 	restrictions: PropTypes.array,
+	alternativeRoute: PropTypes.bool,
 };
 
 export default MapViewDirections;
